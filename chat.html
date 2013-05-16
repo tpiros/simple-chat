@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<script src="http://1.2.3.4:1223/socket.io/socket.io.js"></script>
+	<script src="http://1.2.3.4/js/jquery.js"></script>
+	<script src="http://1.2.3.4/js/bootstrap.js"></script>
+	<script src="http://1.2.3.4/js/jquery.js"></script>
+	<link rel="stylesheet" type="text/css" href="http://1.2.3.4/css/bootstrap.css">
+	<script>
+	$(document).ready(function(){
+		var socket = io.connect("1.2.3.4:1223");
+		$("#chat").hide();
+		$("#name").focus();
+		$("form").submit(function(event){
+    		event.preventDefault();
+		});
+
+		$("#join").click(function(){
+			var name = $("#name").val();
+			if (name != "") {
+				socket.emit("join", name);
+				$("#login").detach();
+				$("#chat").show();
+				$("#msg").focus();
+				ready = true;
+			}
+		});
+
+		$("#name").keypress(function(e){
+			if(e.which == 13) {
+				var name = $("#name").val();
+				if (name != "") {
+					socket.emit("join", name);
+					ready = true;
+					$("#login").detach();
+					$("#chat").show();
+					$("#msg").focus();
+				}
+			}
+		});
+
+		socket.on("update", function(msg) {
+			if(ready)
+				$("#msgs").append("<li>" + msg + "</li>");
+		})
+
+		socket.on("update-people", function(people){
+			if(ready) {
+				$("#people").empty();
+				$.each(people, function(clientid, name) {
+					$('#people').append("<li>" + name + "</li>");
+				});
+			}
+		});
+
+		socket.on("chat", function(who, msg){
+			if(ready) {
+				$("#msgs").append("<li><strong><span class='text-success'>" + who + "</span></strong> says: " + msg + "</li>");
+			}
+		});
+
+		socket.on("disconnect", function(){
+			$("#msgs").append("<li><strong><span class='text-warning'>The server is not available</span></strong></li>");
+			$("#msg").attr("disabled", "disabled");
+			$("#send").attr("disabled", "disabled");
+		});
+
+
+		$("#send").click(function(){
+			var msg = $("#msg").val();
+			socket.emit("send", msg);
+			$("#msg").val("");
+		});
+
+		$("#msg").keypress(function(e){
+			if(e.which == 13) {
+				var msg = $("#msg").val();
+				socket.emit("send", msg);
+				$("#msg").val("");
+			}
+		});
+
+	});
+</script>
+<body>
+
+<div class="row">
+  <div class="span2">
+  	<ul id="people" class="unstyled"></ul>
+  </div>
+  <div class="span4">
+  	<ul id="msgs" class="unstyled"></ul>
+  </div>
+</div>
+<div class="row">
+	<div class="span5 offset2" id="login">
+		<form class="form-inline">
+  			<input type="text" class="input-small" placeholder="Your name" id="name">
+			<input type="button" name="join" id="join" value="Join" class="btn btn-primary">
+		</form>
+	</div>
+
+	<div class="span5 offset2" id="chat">
+		<forma id="2" class="form-inline">
+  			<input type="text" class="input" placeholder="Your message" id="msg">
+			<input type="button" name="send" id="send" value="Send" class="btn btn-success">
+		</form>
+	</div>
+  </div>
+</div>
+
+</body>
+</html>
